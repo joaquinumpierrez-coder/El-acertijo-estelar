@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Código Estelar - Escape Room Interestelar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts para estilo místico y de ciencia ficción -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        .font-mono-sci {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .font-magic {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* --- ANIMACIONES DEL GRILLETE DEL CANDADO --- */
+        @keyframes unlock-shackle {
+            0% { transform: translateY(0) rotate(0deg); }
+            40% { transform: translateY(-38px) rotate(-18deg); }
+            60% { transform: translateY(-30px) rotate(-12deg); }
+            80% { transform: translateY(-34px) rotate(-15deg); }
+            100% { transform: translateY(-32px) rotate(-15deg); }
+        }
+        .shackle-open {
+            animation: unlock-shackle 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes shackle-error-jerk {
+            0% { transform: translateY(0); }
+            20% { transform: translateY(-12px); }
+            35% { transform: translateY(0); }
+            55% { transform: translateY(-6px); }
+            70% { transform: translateY(0); }
+            85% { transform: translateY(-2px); }
+            100% { transform: translateY(0); }
+        }
+        .shackle-error {
+            animation: shackle-error-jerk 0.6s ease-in-out;
+        }
+
+        @keyframes lock-shackle {
+            from { transform: translateY(-32px) rotate(-15deg); }
+            to { transform: translateY(0) rotate(0deg); }
+        }
+        .shackle-close {
+            animation: lock-shackle 0.5s cubic-bezier(0.6, -0.28, 0.73, 0.04) forwards;
+        }
+
+        /* Retroceso físico del cuerpo del candado al saltar el grillete */
+        @keyframes lock-body-recoil {
+            0% { transform: scale(1) translateY(0); }
+            25% { transform: scale(1.02) translateY(10px); }
+            60% { transform: scale(0.98) translateY(-3px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        .lock-recoil {
+            animation: lock-body-recoil 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        /* --- EFECTOS VISUALES CÓSMICOS --- */
+        .magic-glow {
+            filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.6));
+        }
+        .magic-glow-gold {
+            filter: drop-shadow(0 0 25px rgba(234, 179, 8, 0.9));
+        }
+        
+        @keyframes shake-magic {
+            0%, 100% { transform: translateX(0) scale(1); }
+            15%, 45%, 75% { transform: translateX(-8px) scale(0.98); }
+            30%, 60%, 90% { transform: translateX(8px) scale(0.98); }
+        }
+        .vibrate-error {
+            animation: shake-magic 0.6s ease-in-out;
+            filter: drop-shadow(0 0 35px rgba(239, 68, 68, 0.8)) !important;
+        }
+
+        @keyframes portal-spin {
+            0% { transform: rotate(0deg) scale(0.95); }
+            50% { transform: rotate(180deg) scale(1.05); }
+            100% { transform: rotate(360deg) scale(0.95); }
+        }
+        .animate-portal {
+            animation: portal-spin 30s infinite linear;
+        }
+
+        .voice-bar {
+            background: linear-gradient(180deg, #facc15 0%, #ec4899 50%, #a855f7 100%);
+            width: 6px;
+            height: 12px;
+            border-radius: 4px;
+            transition: height 0.1s ease-in-out;
+        }
+        .voice-bar.active {
+            animation: pulse-bar 0.8s infinite ease-in-out alternate;
+        }
+        @keyframes pulse-bar {
+            0% { height: 10px; }
+            100% { height: 55px; }
+        }
+
+        /* Partículas chispeantes de la cerradura */
+        .sparkle-particle {
+            position: absolute;
+            background: radial-gradient(circle, #facc15 0%, rgba(234,179,8,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 30;
+            animation: fly-sparkle 0.8s ease-out forwards;
+        }
+        @keyframes fly-sparkle {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* Ocultar barra de desplazamiento */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6b21a8;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between text-slate-100 select-none bg-slate-950 overflow-x-hidden relative font-sans">
+
+    <!-- Canvas para el fondo estrellado interactivo -->
+    <canvas id="starfield" class="absolute inset-0 pointer-events-none z-0"></canvas>
+
+    <div id="welcome-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 px-4 text-center transition-all duration-1000 overflow-y-auto">
+        <div class="absolute inset-0 border-[16px] border-double border-purple-900/30 pointer-events-none opacity-50"></div>
+        <div class="absolute top-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="z-10 max-w-4xl mx-auto space-y-8 p-6 md:p-8 border border-purple-500/30 bg-slate-900/80 backdrop-blur-lg rounded-2xl shadow-2xl relative my-auto">
+            <div class="inline-block px-4 py-2 border border-purple-500/30 bg-purple-950/40 rounded-full text-purple-300 font-mono-sci text-sm tracking-widest animate-pulse">
+                SISTEMA DE COMUNICACIONES SUBSIDERAL DE DETECCIÓN ACTIVA
+            </div>
+            
+            <h1 class="text-4xl md:text-6xl font-magic font-extrabold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-300 to-amber-300 drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                EL CÓDIGO ESTELAR
+            </h1>
+
+            <!-- Fase de Calibración de Frecuencia (Fase 1) -->
+            <div id="intro-phase-1" class="space-y-6 max-w-xl mx-auto">
+                <p class="text-slate-300 font-mono-sci text-sm md:text-base leading-relaxed">
+                    [ATENCIÓN] Las antenas receptoras han detectado un eco de datos encriptados proveniente de un cúmulo de asteroides no catalogados. Calibra la antena para decodificar la frecuencia interestelar.
+                </p>
+                
+                <!-- Sintonizador de frecuencia interactivo -->
+                <div class="bg-slate-950/90 border border-purple-500/30 p-4 rounded-xl space-y-4">
+                    <div class="flex justify-between text-xs font-mono-sci text-purple-400">
+                        <span>FRECUENCIA ACTUAL: <span id="current-freq-text" class="text-amber-400 font-bold">100 MHz</span></span>
+                        <span>Fórmula Cósmica: 432 MHz</span>
+                    </div>
+                    <input type="range" id="freq-slider" min="100" max="600" value="100" oninput="updateFrequency(this.value)" class="w-full accent-purple-500 bg-slate-900 rounded-lg appearance-none h-2 cursor-pointer">
+                    <div class="text-center">
+                        <span id="tuning-status" class="text-xs font-mono-sci uppercase px-3 py-1 bg-red-950/50 text-red-400 rounded border border-red-900/30 animate-pulse">📡 SEÑAL INESTABLE</span>
+                    </div>
+                </div>
+
+                <button id="connect-btn" disabled onclick="startCalibration()" class="px-8 py-4 bg-slate-800 text-slate-500 border border-slate-700 font-mono-sci font-semibold rounded-xl shadow-lg transition-all duration-300 cursor-not-allowed w-full md:w-auto">
+                    CONECTAR FRECUENCIA CUÁNTICA
+                </button>
+            </div>
+
+            <!-- Terminal de Transmisión de Audio Holográfico (Fase 2) -->
+            <div id="intro-phase-2" class="hidden bg-slate-950/90 border-2 border-dashed border-purple-500/30 p-6 rounded-xl space-y-5 max-w-2xl mx-auto shadow-inner relative overflow-hidden transition-all duration-500">
+                <div class="absolute top-2 right-3 text-[9px] font-mono-sci text-purple-400/50 uppercase tracking-widest">ECO-CANAL 432.0</div>
+                <span class="text-xs font-mono-sci text-pink-400 uppercase tracking-widest block font-bold animate-pulse">TRANSMISIÓN COHERENTE EN DETECCIÓN</span>
+                
+                <div class="flex flex-col items-center justify-center gap-4">
+                    <p class="text-slate-300 text-xs md:text-sm font-mono-sci text-center">
+                        El emisor misterioso ha dejado un rastro de acertijos matemáticos para proteger su bitácora de viaje. ¡Descubre su mensaje encriptado!
+                    </p>
+                    
+                    <button id="play-transmission-btn" onclick="decodeTransmission()" class="px-8 py-4 bg-gradient-to-r from-pink-900/40 via-purple-900/50 to-indigo-900/40 border border-pink-500/50 hover:border-pink-300 text-white font-mono-sci font-semibold rounded-xl flex items-center gap-3 shadow-[0_0_20px_rgba(236,72,153,0.15)] transition-all duration-300 hover:scale-105 active:scale-95 group cursor-pointer">
+                        <span id="speaker-icon" class="text-xl group-hover:scale-125 transition-transform">🔊</span>
+                        <span id="speaker-text">DECODIFICAR TRANSMISIÓN SÓNICA</span>
+                    </button>
+                    
+                    <!-- Visualizador de Ondas -->
+                    <div id="hologram-visualizer" class="flex items-center justify-center gap-1.5 h-16 opacity-40 transition-opacity duration-300">
+                        <div class="voice-bar" style="animation-delay: 0.1s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.4s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.2s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.6s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.3s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.5s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.2s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.7s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.4s"></div>
+                        <div class="voice-bar" style="animation-delay: 0.1s"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Final de Despegue (Fase 3) -->
+            <div id="intro-phase-3" class="hidden flex flex-col items-center gap-3 pt-2 transition-all duration-500">
+                <div class="p-4 bg-slate-950/60 border border-purple-500/20 rounded-xl max-w-xl text-left text-xs md:text-sm font-mono-sci text-purple-300/90 leading-relaxed mb-4">
+                    <span class="text-amber-400 font-bold">REPORTE DE SISTEMA:</span> Cinco sellos de datos orbitales han sido anclados en el espacio exterior. Cada uno custodia un fragmento de la bitácora de un misterioso viajero. Resuelve los enigmas de números y posiciones para reconstruir su sabiduría y revelar quién es.
+                </div>
+                <button id="start-mission-btn" onclick="startGame()" class="px-12 py-5 bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-slate-950 font-magic font-extrabold text-2xl rounded-xl transition-all duration-300 flex items-center gap-3 cursor-pointer shadow-[0_0_30px_rgba(245,158,11,0.4)] animate-pulse hover:animate-none">
+                    <svg class="w-7 h-7 fill-slate-950 animate-spin" style="animation-duration: 4s" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    DESBLOQUEAR PORTALES
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENCABEZADO PRINCIPAL -->
+    <header class="relative z-10 px-8 py-4 bg-slate-950/80 backdrop-blur-md border-b border-purple-950/40 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-4 h-4 rounded-full bg-purple-500 animate-pulse shadow-[0_0_10px_#a855f7]"></div>
+            <div>
+                <h2 class="text-xs font-mono-sci tracking-widest text-purple-400 uppercase">Misión de Rastreo Interestelar</h2>
+                <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2 font-magic">
+                    <span class="text-amber-400">PORTALES DEL</span> VIAJERO SILENCIOSO
+                </h1>
+            </div>
+        </div>
+        
+        <!-- Controles de sonido y progreso de niveles -->
+        <div class="flex items-center gap-4">
+            <button id="music-toggle-btn" onclick="toggleMusic()" class="px-4 py-2 bg-slate-900 border border-purple-800/40 hover:border-purple-500 rounded-xl flex items-center gap-2 text-xs font-mono-sci transition-colors text-purple-300 cursor-pointer">
+                <span id="music-icon">🔇</span> TRANSMISIÓN RÍTMICA: <span id="music-status-text" class="font-bold text-red-400">OFF</span>
+            </button>
+
+            <div class="flex items-center gap-3 bg-slate-900/80 px-6 py-2 border border-purple-900/50 rounded-xl">
+                <span class="text-xs font-mono-sci text-purple-400 uppercase tracking-widest">SELLOS ROTOS:</span>
+                <div class="flex gap-2">
+                    <div id="pdot-1" class="w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-slate-800 text-slate-500 bg-slate-950">1</div>
+                    <div id="pdot-2" class="w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-slate-800 text-slate-500 bg-slate-950">2</div>
+                    <div id="pdot-3" class="w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-slate-800 text-slate-500 bg-slate-950">3</div>
+                    <div id="pdot-4" class="w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-slate-800 text-slate-500 bg-slate-950">4</div>
+                    <div id="pdot-5" class="w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-slate-800 text-slate-500 bg-slate-950">5</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CUERPO PRINCIPAL DEL JUEGO -->
+    <main class="relative z-10 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 items-center px-4 max-w-[1700px] mx-auto w-full py-6">
+        
+        <!-- PANEL IZQUIERDO: Tarjeta de pistas numéricas -->
+        <section class="lg:col-span-5 flex flex-col justify-between h-full gap-6">
+            <div class="flex-grow bg-slate-900/60 backdrop-blur-md border-2 border-purple-500/30 rounded-2xl shadow-xl p-6 flex flex-col justify-between relative min-h-[450px]">
+                <!-- Esquinas decorativas mágicas -->
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-purple-400"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-purple-400"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-purple-400"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-purple-400"></div>
+
+                <div>
+                    <div class="flex items-center justify-between border-b border-purple-900/30 pb-3 mb-4">
+                        <span id="level-title" class="text-sm font-mono-sci tracking-widest text-purple-400 font-bold uppercase">Cargando...</span>
+                        <span id="formula-badge" class="px-2.5 py-0.5 bg-purple-950/50 border border-purple-500/20 text-purple-300 rounded font-mono-sci text-xs">Fórmula de Apertura</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="text-xs uppercase font-mono-sci text-purple-400/75 tracking-wider">Acertijo del Guardián:</div>
+                        <div id="clue-text" class="text-lg md:text-2xl font-semibold leading-relaxed tracking-wide text-white bg-slate-950/50 p-6 border border-purple-900/30 rounded-xl min-h-[180px] flex items-center justify-center text-center">
+                            Cargando acertijo estelar primario...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-purple-900/30 flex justify-between items-center bg-slate-950/40 p-3 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-purple-400 animate-ping"></div>
+                        <span id="analizer-text" class="text-xs font-mono-sci text-purple-300">ANALIZADOR DE SELLOS NUMÉRICOS</span>
+                    </div>
+                    <span id="digit-hint-badge" class="px-2 py-0.5 bg-amber-950 text-amber-300 text-xs font-bold rounded font-mono-sci">...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL CENTRAL: El Gran Candado Mágico y Revelación de Planetas -->
+        <section class="lg:col-span-4 flex flex-col items-center justify-center">
+            <div id="gate-container" class="relative w-80 h-80 sm:w-96 sm:h-96 rounded-full border-8 border-purple-900/40 overflow-hidden shadow-[0_0_60px_rgba(147,51,234,0.3)] bg-slate-950 flex items-center justify-center transition-all duration-500">
+                
+                <!-- Capa profunda: Portal Mágico y Adivinanza Desbloqueada -->
+                <div id="planet-reveal-box" class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950 via-purple-950 to-indigo-950 p-6 text-center opacity-0 transition-opacity duration-1000 z-10 pointer-events-none">
+                    <div id="planet-svg-container" class="w-32 h-32 flex items-center justify-center mb-2">
+                        <!-- Se inyecta dinámicamente por JavaScript -->
+                    </div>
+                    <h3 id="revealed-planet-title" class="text-base font-bold text-amber-300 font-magic tracking-wider uppercase">ASTEROIDE</h3>
+                    
+                    <!-- PISTA DE ADIVINANZA REVELADA -->
+                    <div class="mt-3 bg-purple-950/60 border border-purple-500/40 p-3 rounded-xl shadow-inner max-w-sm">
+                        <span class="text-[10px] font-mono-sci text-pink-400 uppercase tracking-widest block mb-1">🗝️ Bitácora Fragmentada Recuperada:</span>
+                        <p id="riddle-clue-display" class="text-xs sm:text-sm text-amber-100 font-serif italic font-semibold leading-relaxed">
+                            Cargando revelación cósmica...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Candado Mágico Exterior (Capa de Bloqueo) -->
+                <div id="magic-padlock-view" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 z-20 transition-all duration-1000">
+                    <div class="absolute w-72 h-72 rounded-full border-2 border-dashed border-purple-500/20 animate-portal magic-ring"></div>
+                    
+                    <!-- SVG de Candado Mágico -->
+                    <svg id="magic-padlock-svg" class="w-48 h-48 magic-glow transition-all duration-700" viewBox="0 0 100 120">
+                        <defs>
+                            <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#facc15" />
+                                <stop offset="50%" stop-color="#ca8a04" />
+                                <stop offset="100%" stop-color="#854d0e" />
+                            </linearGradient>
+                            <linearGradient id="key-gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#fef08a" />
+                                <stop offset="40%" stop-color="#facc15" />
+                                <stop offset="70%" stop-color="#ca8a04" />
+                                <stop offset="100%" stop-color="#854d0e" />
+                            </linearGradient>
+                            <linearGradient id="purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#c084fc" />
+                                <stop offset="50%" stop-color="#8b5cf6" />
+                                <stop offset="100%" stop-color="#4c1d95" />
+                            </linearGradient>
+                        </defs>
+                        
+                        <!-- Grillete del candado -->
+                        <g id="padlock-shackle-group" class="transition-all duration-700" style="transform-origin: 30px 50px;">
+                            <path id="padlock-shackle" d="M 30,50 V 28 A 20,20 0 0,1 70,28 V 50" fill="none" stroke="url(#gold-grad)" stroke-width="8" stroke-linecap="round" />
+                        </g>
+                        
+                        <!-- Cuerpo del candado -->
+                        <g id="padlock-body-group" style="transform-origin: 50px 70px;">
+                            <rect x="20" y="45" width="60" height="50" rx="12" fill="url(#purple-grad)" stroke="url(#gold-grad)" stroke-width="3" />
+                            
+                            <!-- Ojo de cerradura -->
+                            <circle cx="50" cy="65" r="8" fill="#1e1b4b" stroke="#eab308" stroke-width="1.5" />
+                            <path d="M 47,69 L 44,83 H 56 L 53,69 Z" fill="#1e1b4b" stroke="#eab308" stroke-width="1.5" />
+                            
+                            <!-- Runas/Símbolos mágicos -->
+                            <path d="M 32,58 H 38 M 62,58 H 68 M 32,80 H 38 M 62,80 H 68" stroke="#facc15" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+                        </g>
+
+                        <!-- Llave Celestial Mágica Oculta (Mapeada perfectamente al pivote central de giro en 50,65) -->
+                        <g id="magic-key-group" style="transform: translate(0px, -45px) scale(0); opacity: 0; transform-origin: 50px 65px; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s;">
+                            <!-- Eje central de la llave -->
+                            <rect x="47.5" y="25" width="5" height="40" fill="url(#key-gold-grad)" rx="2.5" filter="drop-shadow(0 0 5px rgba(250,204,21,0.6))" />
+                            <line x1="50" y1="30" x2="50" y2="60" stroke="#854d0e" stroke-width="1" stroke-dasharray="2 3" />
+                            
+                            <!-- Empuñadura astrológica superior -->
+                            <circle cx="50" cy="15" r="12" fill="url(#key-gold-grad)" stroke="#eab308" stroke-width="1.5" />
+                            <circle cx="50" cy="15" r="9" fill="#1e1b4b" />
+                            <path d="M50,8 L52,13 L57,15 L52,17 L50,22 L48,17 L43,15 L48,13 Z" fill="url(#key-gold-grad)" />
+                            
+                            <!-- Dientes tallados para encajar perfectamente con la rotación del ojo de la cerradura -->
+                            <path d="M52.5,52 H61 V56 H52.5 Z" fill="url(#key-gold-grad)" />
+                            <path d="M52.5,58 H59 V62 H52.5 Z" fill="url(#key-gold-grad)" />
+                            <circle cx="57" cy="54" r="1" fill="#1e1b4b" />
+                            <circle cx="55" cy="60" r="1" fill="#1e1b4b" />
+                        </g>
+                    </svg>
+
+                    <div class="mt-4 text-[10px] font-mono-sci text-purple-400 tracking-widest text-center">
+                        SELLADO CON MAGIA DE CIFRAS
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etiqueta de Seguridad -->
+            <div class="mt-4 px-4 py-1.5 bg-slate-950 border border-purple-900/40 rounded-lg text-xs font-mono-sci tracking-widest text-slate-400 flex items-center gap-2">
+                ESTADO DEL PORTAL: <span id="gate-status-text" class="text-amber-500 font-bold">BLOQUEO ACTIVO</span>
+            </div>
+        </section>
+
+        <!-- PANEL DERECHO: Consola de control e introducción de clave -->
+        <section class="lg:col-span-3 flex flex-col gap-4 h-full">
+            <div class="bg-slate-900/60 backdrop-blur-md border border-purple-950/40 rounded-2xl p-4 flex flex-col justify-between gap-4 h-full relative">
+                
+                <!-- Pantalla del panel de control -->
+                <div>
+                    <label for="code-input" class="block text-xs font-mono-sci tracking-widest text-purple-300 uppercase mb-2">CÓDIGO DE DESBLOQUEO:</label>
+                    <div class="relative">
+                        <input id="code-input" type="text" maxlength="6" placeholder="000000" autocomplete="off"
+                            class="w-full text-center text-3xl md:text-4xl font-mono-sci font-bold tracking-widest bg-slate-950 text-amber-300 border-2 border-purple-900/60 rounded-xl py-3 px-4 focus:outline-none focus:border-purple-400 transition-colors shadow-inner"
+                            onkeypress="return isNumberKey(event)">
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <span class="text-[10px] font-mono-sci text-purple-700">LOCK-v5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teclado en Pantalla -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="pressKey('1')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">1</button>
+                    <button onclick="pressKey('2')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">2</button>
+                    <button onclick="pressKey('3')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">3</button>
+                    <button onclick="pressKey('4')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">4</button>
+                    <button onclick="pressKey('5')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">5</button>
+                    <button onclick="pressKey('6')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">6</button>
+                    <button onclick="pressKey('7')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">7</button>
+                    <button onclick="pressKey('8')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">8</button>
+                    <button onclick="pressKey('9')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">9</button>
+                    <button onclick="clearInput()" class="py-3 bg-red-950/30 hover:bg-red-900/40 text-red-400 font-mono-sci font-bold text-xs rounded-lg transition-colors border border-red-900/40 active:scale-95 cursor-pointer">LIMPIAR</button>
+                    <button onclick="pressKey('0')" class="py-3 bg-purple-950/30 hover:bg-purple-900/40 text-lg font-mono-sci font-bold rounded-lg transition-colors border border-purple-900/30 hover:border-purple-500 active:scale-95 text-purple-200 cursor-pointer">0</button>
+                    <button onclick="backspaceInput()" class="py-3 bg-amber-950/30 hover:bg-amber-900/40 text-amber-400 font-mono-sci font-bold text-xs rounded-lg transition-colors border border-amber-900/40 active:scale-95 cursor-pointer">BORRAR</button>
+                </div>
+
+                <!-- Botones de validación -->
+                <div class="mt-2 space-y-3">
+                    <button id="validate-btn" onclick="validateCode()" class="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-magic font-extrabold text-lg rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-98 flex items-center justify-center gap-2 cursor-pointer">
+                        <span>ABRIR PORTAL</span>
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                    </button>
+
+                    <button id="next-level-btn" onclick="nextLevel()" class="hidden w-full py-4 bg-gradient-to-r from-amber-500 to-pink-600 hover:from-amber-400 hover:to-pink-500 font-magic font-extrabold text-lg rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-bounce flex items-center justify-center gap-2 text-white cursor-pointer">
+                        <span>SIGUIENTE COORDENADA</span>
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-8.29-1.42 1.42L16.86 11H5v2z"/></svg>
+                    </button>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- COMPONENTES DE CELEBRACIÓN FINAL -->
+    <div id="victory-screen" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-slate-950/95 px-4 text-center overflow-y-auto py-10">
+        <canvas id="fireworks-canvas" class="absolute inset-0 pointer-events-none z-10"></canvas>
+
+        <div class="z-20 max-w-2xl p-8 border border-amber-500/30 bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-2xl space-y-6 my-auto">
+            <span class="px-4 py-1.5 bg-purple-950 border border-purple-500/40 text-purple-300 font-mono-sci text-sm tracking-widest rounded-full animate-pulse">¡CÓDIGO INTEGRAL DEVELADO!</span>
+            
+            <h1 class="text-3xl md:text-5xl font-magic font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-purple-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+                EL VIAJERO DE LAS ESTRELLAS
+            </h1>
+
+            <!-- Acumulador Final de la Adivinanza (Misterio Sin Revelar Nombre Comercial) -->
+            <div class="bg-purple-950/40 border border-purple-500/30 p-5 rounded-2xl text-left space-y-3 max-w-xl mx-auto shadow-inner">
+                <span class="text-xs font-mono-sci text-amber-300 uppercase tracking-widest block text-center border-b border-purple-900 pb-2 mb-2">📜 La Bitácora Celestial Recompuesta</span>
+                <p class="text-xs sm:text-sm font-serif italic text-slate-300 leading-relaxed text-center" id="compiled-riddle-text">
+                    <!-- Completado dinámicamente -->
+                </p>
+            </div>
+
+            <!-- Hermosa Ilustración Abstracta del Personaje -->
+            <div class="flex justify-center py-2">
+                <div class="w-36 h-36 bg-amber-500/10 rounded-full flex items-center justify-center p-3 border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.25)] relative overflow-hidden">
+                    <div class="absolute inset-0 bg-radial-gradient from-transparent to-purple-950/40 animate-pulse"></div>
+                    <svg class="w-full h-full relative z-10" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2 3"/>
+                        
+                        <!-- Silueta poética del misterioso viajero con bufanda -->
+                        <path d="M42,26 L50,15 L58,26 L54,34 L46,34 Z" fill="#fbbf24" opacity="0.9" />
+                        <path d="M50,38 L68,68 L50,62 L32,68 Z" fill="#ca8a04" opacity="0.8" />
+                        <path d="M50,38 L58,68 L50,62 L42,68 Z" fill="#facc15" />
+                        <path d="M50,38 Q35,46 22,38 Q12,30 6,45" stroke="#fef08a" fill="none" stroke-width="2.5" stroke-linecap="round" class="animate-pulse" />
+                        <circle cx="50" cy="30" r="6" fill="#fef08a" />
+                        <path d="M36,44 L28,68 M25,62 L34,60" stroke="#fef08a" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+            </div>
+
+            <p class="text-slate-300 text-base md:text-lg font-light leading-relaxed">
+                ¡Los 5 sellos orbitales se han disuelto! Has reconstruido la bitácora sagrada de este sabio viajero cósmico. Sus mundos ahora están conectados en armonía celestial.
+            </p>
+
+            <div id="victory-planet-gallery" class="flex justify-center gap-3 py-2 overflow-x-auto max-w-full">
+                <!-- Se poblará dinámicamente con los planetas salvados -->
+            </div>
+
+            <div>
+                <button onclick="resetGame()" class="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-magic font-extrabold text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-[0_0_20px_rgba(168,85,247,0.4)] cursor-pointer">
+                    INICIAR NUEVA TRAVESÍA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* === MOTOR DE AUDIO RETROWAVE DE ALTA CALIDAD === */
+        /* Diseñado con ritmos pegadizos y tonos de misterio en Sol sostenido menor para enganchar a los chicos de escuela */
+        const AudioEngine = {
+            ctx: null,
+            isPlayingMusic: false,
+            mainGain: null,
+            delayNode: null,
+            
+            // Instancias de control temporal para el sintetizador
+            schedulerInterval: null,
+            tempo: 120, // 120 BPM pegadizo
+            nextNoteTime: 0.0,
+            lookahead: 25.0, // ms
+            scheduleAheadTime: 0.1, // segundos
+            step: 0,
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Master Gain para control de volumen general
+                    this.mainGain = this.ctx.createGain();
+                    this.mainGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                    this.mainGain.connect(this.ctx.destination);
+
+                    // Nodo de Eco Espacial (Delay con Feedback) para máxima atmósfera cósmica
+                    this.delayNode = this.ctx.createDelay(1.0);
+                    this.delayNode.delayTime.setValueAtTime(0.375, this.ctx.currentTime); // Sincopado (corchea con punto)
+                    
+                    const delayFeedback = this.ctx.createGain();
+                    delayFeedback.gain.setValueAtTime(0.35, this.ctx.currentTime);
+
+                    this.delayNode.connect(delayFeedback);
+                    delayFeedback.connect(this.delayNode);
+                    
+                    // Conectar la salida del delay al máster
+                    this.delayNode.connect(this.mainGain);
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            // Generador básico de beeps mecánicos con delay espacial opcional
+            beep(freq, type = 'sine', duration = 0.1, volume = 0.15, filterFreq = 2000, sendToDelay = false) {
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gainNode = this.ctx.createGain();
+                    const filter = this.ctx.createBiquadFilter();
+                    
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(filterFreq, this.ctx.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(volume, this.ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    
+                    osc.connect(filter);
+                    filter.connect(gainNode);
+                    
+                    gainNode.connect(this.mainGain);
+                    if (sendToDelay && this.delayNode) {
+                        gainNode.connect(this.delayNode);
+                    }
+                    
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {
+                    console.log('Error en beep básico');
+                }
+            },
+
+            /* --- GENERACIÓN PROCEDURAL DE COMPONENTES DEL RITMO --- */
+            
+            // Bombo sintético profundo y pegadizo
+            playSynthKick(time) {
+                const osc = this.ctx.createOscillator();
+                const gainNode = this.ctx.createGain();
+                
+                osc.connect(gainNode);
+                gainNode.connect(this.mainGain);
+                
+                // Caída rápida de frecuencia para el impacto del golpe de bombo
+                osc.frequency.setValueAtTime(120, time);
+                osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.12);
+                
+                gainNode.gain.setValueAtTime(0.7, time);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+                
+                osc.start(time);
+                osc.stop(time + 0.12);
+            },
+
+            // Platillo cósmico (Hi-hat de ruido blanco filtrado a contratiempo)
+            playStellarHat(time, isOpen = false) {
+                const bufferSize = this.ctx.sampleRate * 0.15;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noiseNode = this.ctx.createBufferSource();
+                noiseNode.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(7000, time);
+
+                const gainNode = this.ctx.createGain();
+                const vol = isOpen ? 0.08 : 0.05;
+                const duration = isOpen ? 0.15 : 0.05;
+
+                gainNode.gain.setValueAtTime(vol, time);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+                noiseNode.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(this.mainGain);
+
+                noiseNode.start(time);
+                noiseNode.stop(time + duration);
+            },
+
+            // Bajo rítmico sintético (Stranger Things vibe) en G# Menor
+            playRetroBass(time, freq, duration = 0.15) {
+                const osc = this.ctx.createOscillator();
+                const subOsc = this.ctx.createOscillator();
+                const gainNode = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, time);
+
+                // Sub bajo en onda triangular para cuerpo y pegada en el salón de clase
+                subOsc.type = 'triangle';
+                subOsc.frequency.setValueAtTime(freq / 2, time);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(450, time);
+                filter.Q.setValueAtTime(2.0, time);
+
+                gainNode.gain.setValueAtTime(0.22, time);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+                osc.connect(filter);
+                subOsc.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(this.mainGain);
+
+                osc.start(time);
+                osc.stop(time + duration);
+                subOsc.start(time);
+                subOsc.stop(time + duration);
+            },
+
+            // Arpegiador agudo y misterioso de fondo
+            playMysteryArp(time, freq) {
+                const osc = this.ctx.createOscillator();
+                const gainNode = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, time);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1500, time);
+
+                gainNode.gain.setValueAtTime(0.07, time);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+
+                osc.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(this.mainGain);
+                
+                // Enviar el arpegio al delay para darle eco estelar masivo
+                if (this.delayNode) {
+                    gainNode.connect(this.delayNode);
+                }
+
+                osc.start(time);
+                osc.stop(time + 0.25);
+            },
+
+            /* --- GENERACIÓN DE EFECTO DE SINTONIZACIÓN DE RADIO REALISTA --- */
+            playTuningSfx(val) {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    
+                    // 1. Estática de Radio (Ruido Blanco Filtrado)
+                    const bufferSize = this.ctx.sampleRate * 0.08; // Burst corto
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+                    
+                    const noiseFilter = this.ctx.createBiquadFilter();
+                    noiseFilter.type = 'bandpass';
+                    const distance = Math.abs(val - 432);
+                    // Cambia el filtro conforme mueves el dial
+                    noiseFilter.frequency.setValueAtTime(800 + (distance * 4), now);
+                    noiseFilter.Q.setValueAtTime(2.5, now);
+                    
+                    const noiseGain = this.ctx.createGain();
+                    // Cuanto más lejos estés de 432 MHz, más fuerte es la estática
+                    const staticVol = Math.min(0.20, (distance / 450) * 0.35);
+                    noiseGain.gain.setValueAtTime(staticVol, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+                    
+                    noise.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(this.mainGain);
+                    noise.start(now);
+                    noise.stop(now + 0.08);
+
+                    // 2. Silbido de Heterodino (Tono de sintonización que fluctúa)
+                    const whistleOsc = this.ctx.createOscillator();
+                    const whistleGain = this.ctx.createGain();
+                    whistleOsc.type = 'sine';
+                    // Variación analógica de frecuencia
+                    const sweepFreq = 220 + (val * 1.3) + (Math.sin(val * 0.15) * 20);
+                    whistleOsc.frequency.setValueAtTime(sweepFreq, now);
+                    
+                    // El tono destaca cuando te aproximas al canal exacto
+                    const toneVol = Math.max(0.001, 0.12 - (distance / 200));
+                    whistleGain.gain.setValueAtTime(toneVol, now);
+                    whistleGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+                    
+                    whistleOsc.connect(whistleGain);
+                    whistleGain.connect(this.mainGain);
+                    whistleOsc.start(now);
+                    whistleOsc.stop(now + 0.08);
+                } catch (e) {
+                    console.log('Error sintonizando');
+                }
+            },
+
+            /* --- PLANIFICADOR DE EVENTOS SÓNICOS (LOOKAHEAD SCHEDULER) --- */
+            scheduleNextStep(stepNumber, time) {
+                // Escala Sol Sostenido Menor (G# Minor) - Muy mística y de misterio espacial
+                const baseBassNotes = [103.83, 123.47, 138.59, 155.56]; // G#2, B2, C#3, D#3
+                
+                // Definición del acorde actual sobre un patrón de 32 tiempos
+                let chordIndex = 0;
+                if (stepNumber >= 0 && stepNumber < 8) chordIndex = 0; // G#m
+                else if (stepNumber >= 8 && stepNumber < 16) chordIndex = 1; // B
+                else if (stepNumber >= 16 && stepNumber < 24) chordIndex = 2; // C#m
+                else chordIndex = 3; // D#
+
+                const bassFreq = baseBassNotes[chordIndex];
+
+                // Bombo en tiempos 1, 5, 9, 13
+                if (stepNumber % 4 === 0) {
+                    this.playSynthKick(time);
+                }
+
+                // Platillos a contratiempo
+                if (stepNumber % 4 === 2) {
+                    this.playStellarHat(time, false);
+                } else if (stepNumber % 8 === 6) {
+                    this.playStellarHat(time, true); 
+                }
+
+                // Patrón de bajo galopante con síncopa bailable
+                const bassPattern = [true, false, true, true, false, true, true, false];
+                if (bassPattern[stepNumber % 8]) {
+                    this.playRetroBass(time, bassFreq, 0.12);
+                }
+
+                // Arpegios rápidos de melodía flotante en las octavas superiores
+                const arpNotes = [bassFreq * 4, bassFreq * 5, bassFreq * 6, bassFreq * 8];
+                const arpSteps = [0, 2, 4, 5, 7, 9, 11, 13, 14];
+                if (arpSteps.includes(stepNumber % 16)) {
+                    const selectNote = arpNotes[(stepNumber + Math.floor(stepNumber/4)) % arpNotes.length];
+                    this.playMysteryArp(time, selectNote);
+                }
+
+                // Campanilla brillante aleatoria
+                if (stepNumber % 16 === 15 && Math.random() > 0.4) {
+                    const bells = [830.61, 987.77, 1109.73, 1244.51]; // G#5, B5, C#6, D#6
+                    const bellNote = bells[Math.floor(Math.random() * bells.length)];
+                    this.beep(bellNote, 'sine', 1.2, 0.02, 3500, true);
+                }
+            },
+
+            // Bucle planificador de alta precisión en tiempo real
+            scheduler() {
+                while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
+                    this.scheduleNextStep(this.step, this.nextNoteTime);
+                    const secondsPerBeat = 60.0 / this.tempo;
+                    const secondsPerStep = secondsPerBeat / 4; 
+                    this.nextNoteTime += secondsPerStep;
+
+                    this.step = (this.step + 1) % 32;
+                }
+            },
+
+            startSpaceAmbient() {
+                this.init();
+                if (this.isPlayingMusic) return;
+
+                this.step = 0;
+                this.nextNoteTime = this.ctx.currentTime;
+                
+                this.schedulerInterval = setInterval(() => {
+                    this.scheduler();
+                }, this.lookahead);
+
+                this.isPlayingMusic = true;
+            },
+
+            stopSpaceAmbient() {
+                if (this.schedulerInterval) {
+                    clearInterval(this.schedulerInterval);
+                }
+                this.isPlayingMusic = false;
+            },
+
+            // Sonidos interactivos de éxito y fracaso mecánicos
+            playUnlockSound() {
+                const scale = [207.65, 261.63, 311.13, 415.30, 523.25, 622.25, 830.61]; 
+                scale.forEach((freq, index) => {
+                    setTimeout(() => {
+                        this.beep(freq, 'sine', 0.6, 0.12, 3000, true);
+                    }, index * 70);
+                });
+            },
+
+            playErrorSound() {
+                this.beep(110, 'sawtooth', 0.2, 0.15, 600);
+                setTimeout(() => {
+                    this.beep(85, 'sawtooth', 0.35, 0.15, 450);
+                }, 90);
+            },
+
+            playTransmissionSfx() {
+                let count = 0;
+                const interval = setInterval(() => {
+                    if (count > 18) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    const freq = 400 + Math.random() * 800;
+                    this.beep(freq, 'triangle', 0.06, 0.07, 1600);
+                    count++;
+                }, 80);
+            },
+
+            playClickSfx() {
+                this.beep(1200, 'sine', 0.04, 0.06, 2500);
+            }
+        };
+
+        /* === CONFIGURACIÓN DE LOS 5 NIVELES CON SUS PISTAS === */
+        const LEVELS = [
+            {
+                title: "Sello I: Planeta Diminuto",
+                badge: "Enlace Astral",
+                hint: "5 CIFRAS",
+                placeholder: "00000",
+                maxlength: 5,
+                clue: "Tengo 5 cifras. Soy diez mil unidades más grande que el número 35.208. ¿Quién soy?",
+                answer: "45208",
+                riddleClue: "«Mi hogar es un planeta tan diminuto que puedo verlo entero de un vistazo.»",
+                planetName: "ASTEROIDE DE LOS TRES VOLCANES",
+                planetSvg: `
+                    <svg viewBox="0 0 100 100" class="w-full h-full animate-portal">
+                        <circle cx="50" cy="50" r="35" fill="#5b21b6" stroke="#fbbf24" stroke-width="2" />
+                        <circle cx="35" cy="40" r="6" fill="#3b0764" />
+                        <circle cx="65" cy="65" r="8" fill="#3b0764" />
+                        <circle cx="45" cy="70" r="4" fill="#3b0764" />
+                        <path d="M28,30 L35,12 L42,30 Z" fill="#ca8a04" />
+                        <polygon points="32,15 35,8 38,15" fill="#ef4444" />
+                        <path d="M58,26 L65,8 L72,26 Z" fill="#ca8a04" />
+                        <polygon points="62,11 65,4 68,11" fill="#ef4444" />
+                    </svg>
+                `
+            },
+            {
+                title: "Sello II: El Capullo Místico",
+                badge: "Cifras de Descomposición",
+                hint: "6 CIFRAS",
+                placeholder: "000000",
+                maxlength: 6,
+                clue: "Tengo 6 cifras. Estoy compuesto por: 3 x 100.000 + 4 x 1.000 + 1 x 10 + 5 x 1. ¿Quién soy?",
+                answer: "304015",
+                riddleClue: "«Mi única tarea es proteger una sola flor con mucho cuidado.»",
+                planetName: "ÓRBITA DE LA FLOR ÚNICA",
+                planetSvg: `
+                    <svg viewBox="0 0 100 100" class="w-full h-full animate-portal">
+                        <circle cx="50" cy="50" r="35" fill="#1e1b4b" stroke="#ec4899" stroke-width="2" />
+                        <circle cx="50" cy="50" r="28" fill="rgba(165,180,252,0.15)" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="2 2" />
+                        <path d="M50,70 Q46,55 50,40" fill="none" stroke="#22c55e" stroke-width="2" />
+                        <circle cx="50" cy="38" r="7" fill="#ec4899" />
+                        <path d="M46,38 Q50,30 54,38 Z" fill="#db2777" />
+                    </svg>
+                `
+            },
+            {
+                title: "Sello III: El Desierto Silencioso",
+                badge: "Combinatoria del menor",
+                hint: "6 CIFRAS",
+                placeholder: "000000",
+                maxlength: 6,
+                clue: "Tengo 6 cifras. Soy el número menor posible que se puede armar usando los dígitos 5, 0, 8, 2, 4, 9 sin repetir ninguno. ¿Quién soy?",
+                answer: "204589",
+                riddleClue: "«Un sabio animal me enseñó que el secreto de la amistad es dedicar tiempo.»",
+                planetName: "TIERRAS DEL ZORRO DEL DESIERTO",
+                planetSvg: `
+                    <svg viewBox="0 0 100 100" class="w-full h-full animate-portal">
+                        <circle cx="50" cy="50" r="35" fill="#f59e0b" stroke="#ca8a04" stroke-width="2" />
+                        <path d="M18,60 Q35,45 50,60 T82,60" fill="none" stroke="#ca8a04" stroke-width="2" />
+                        <ellipse cx="50" cy="55" rx="5" ry="8" fill="#b45309" />
+                        <circle cx="50" cy="45" r="4" fill="#b45309" />
+                        <polygon points="46,43 45,34 49,42" fill="#b45309" />
+                        <polygon points="54,43 55,34 51,42" fill="#b45309" />
+                        <path d="M54,58 Q64,56 62,48 Q58,48 54,54" fill="#ca8a04" />
+                    </svg>
+                `
+            },
+            {
+                title: "Sello IV: Trigo Dorado",
+                badge: "Composición de Posiciones",
+                hint: "5 CIFRAS",
+                placeholder: "00000",
+                maxlength: 5,
+                clue: "Tengo 5 cifras. Estoy formado por 8 decenas de mil y 15 unidades de mil, 3 centenas y 4 unidades. ¿Quién soy?",
+                answer: "95304",
+                riddleClue: "«Tengo el cabello del color del trigo dorado y una risa que brilla como estrella.»",
+                planetName: "LOS CAMPOS DORADOS",
+                planetSvg: `
+                    <svg viewBox="0 0 100 100" class="w-full h-full animate-portal">
+                        <circle cx="50" cy="50" r="35" fill="#ca8a04" stroke="#facc15" stroke-width="2" />
+                        <line x1="30" y1="30" x2="35" y2="70" stroke="#fef08a" stroke-width="1.5" />
+                        <line x1="50" y1="20" x2="48" y2="80" stroke="#fef08a" stroke-width="1.5" />
+                        <line x1="70" y1="35" x2="65" y2="75" stroke="#fef08a" stroke-width="1.5" />
+                    </svg>
+                `
+            },
+            {
+                title: "Sello V: El Espejo del Alma",
+                badge: "Resta de Millón",
+                hint: "6 CIFRAS",
+                placeholder: "000000",
+                maxlength: 6,
+                clue: "Tengo 6 cifras. Si me sumas una unidad de mil te transformas en un millón. ¿Qué número soy?",
+                answer: "999000",
+                riddleClue: "«Aprendí que lo más importante en la vida no se puede ver con los ojos, sino con el corazón.»",
+                planetName: "EL ESPACIO DEL CORAZÓN",
+                planetSvg: `
+                    <svg viewBox="0 0 100 100" class="w-full h-full animate-portal">
+                        <circle cx="50" cy="50" r="35" fill="#1e1b4b" stroke="#a855f7" stroke-width="2" />
+                        <path d="M12,50 Q50,15 88,50" fill="none" stroke="#ec4899" stroke-width="1.5" stroke-dasharray="3 3" />
+                        <path d="M50,35 C50,35 43,25 35,32 C27,39 45,55 50,60 C55,55 73,39 65,32 C57,25 50,35 50,35 Z" fill="#ec4899" />
+                    </svg>
+                `
+            }
+        ];
+
+        /* === VARIABLES DE ESTADO GENERAL === */
+        let currentLevelIndex = 0;
+        let unlockedLevelsCount = 0;
+        let starfieldInstance = null;
+
+        /* Control interactivo de calibración de frecuencia en la intro */
+        function updateFrequency(val) {
+            AudioEngine.playTuningSfx(parseInt(val));
+            document.getElementById('current-freq-text').innerText = val + " MHz";
+
+            const status = document.getElementById('tuning-status');
+            const connectBtn = document.getElementById('connect-btn');
+
+            if (Math.abs(val - 432) <= 10) {
+                status.innerText = "📡 FRECUENCIA COHERENTE ENCONTRADA";
+                status.className = "text-xs font-mono-sci uppercase px-3 py-1 bg-green-950/70 text-green-400 rounded border border-green-700/40 animate-pulse";
+                
+                connectBtn.disabled = false;
+                connectBtn.className = "px-8 py-4 bg-gradient-to-r from-purple-800 to-indigo-900 hover:from-purple-700 hover:to-indigo-800 border border-purple-400/40 text-white font-mono-sci font-semibold rounded-xl shadow-lg hover:shadow-purple-500/20 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer w-full md:w-auto";
+            } else {
+                status.innerText = "📡 SEÑAL INESTABLE";
+                status.className = "text-xs font-mono-sci uppercase px-3 py-1 bg-red-950/50 text-red-400 rounded border border-red-900/30 animate-pulse";
+                
+                connectBtn.disabled = true;
+                connectBtn.className = "px-8 py-4 bg-slate-800 text-slate-500 border border-slate-700 font-mono-sci font-semibold rounded-xl shadow-lg transition-all duration-300 cursor-not-allowed w-full md:w-auto";
+            }
+        }
+
+        function startCalibration() {
+            AudioEngine.beep(600, 'sine', 0.25, 0.15, 2000);
+            document.getElementById('intro-phase-1').classList.add('hidden');
+            const phase2 = document.getElementById('intro-phase-2');
+            phase2.classList.remove('hidden');
+            phase2.classList.add('animate-pulse');
+        }
+
+        function decodeTransmission() {
+            const bars = document.querySelectorAll('.voice-bar');
+            bars.forEach(bar => bar.classList.add('active'));
+            document.getElementById('hologram-visualizer').style.opacity = '1';
+
+            AudioEngine.playTransmissionSfx();
+
+            const btn = document.getElementById('play-transmission-btn');
+            btn.disabled = true;
+            document.getElementById('speaker-text').innerText = "DECODIFICANDO SEÑAL COHERENTE...";
+
+            setTimeout(() => {
+                bars.forEach(bar => bar.classList.remove('active'));
+                document.getElementById('hologram-visualizer').style.opacity = '0.4';
+                
+                document.getElementById('intro-phase-2').classList.add('hidden');
+                document.getElementById('intro-phase-3').classList.remove('hidden');
+                
+                AudioEngine.beep(880, 'sine', 0.45, 0.2, 3000);
+            }, 2500);
+        }
+
+        function startGame() {
+            AudioEngine.beep(1200, 'sine', 0.2, 0.15, 4000);
+            AudioEngine.startSpaceAmbient();
+            
+            if (starfieldInstance) starfieldInstance.warpSpeed();
+
+            const welcome = document.getElementById('welcome-screen');
+            welcome.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                welcome.style.display = 'none';
+                loadLevel(0);
+            }, 1000);
+        }
+
+        /* === PLANO DE ESTRELLAS 3D INTERACTIVO === */
+        class Starfield {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.stars = [];
+                this.numStars = 200;
+                this.speedMultiplier = 1;
+                this.resize();
+                this.initStars();
+                this.bindEvents();
+                this.animate();
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            initStars() {
+                this.stars = [];
+                for (let i = 0; i < this.numStars; i++) {
+                    this.stars.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        z: Math.random() * this.canvas.width,
+                        color: this.getRandomColor()
+                    });
+                }
+            }
+
+            getRandomColor() {
+                const colors = ['#fef08a', '#c084fc', '#f472b6', '#38bdf8', '#ffffff'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            bindEvents() {
+                window.addEventListener('resize', () => {
+                    this.resize();
+                    this.initStars();
+                });
+                window.addEventListener('mousemove', (e) => {
+                    const amountX = (e.clientX - window.innerWidth / 2) * 0.05;
+                    const amountY = (e.clientY - window.innerHeight / 2) * 0.05;
+                    this.canvas.style.transform = `translate(${amountX}px, ${amountY}px)`;
+                });
+            }
+
+            warpSpeed() {
+                let duration = 1200;
+                let steps = 60;
+                let currentStep = 0;
+                const interval = setInterval(() => {
+                    if (currentStep < steps / 2) {
+                        this.speedMultiplier += 1.8;
+                    } else {
+                        this.speedMultiplier = Math.max(1, this.speedMultiplier - 1.8);
+                    }
+                    currentStep++;
+                    if (currentStep >= steps) {
+                        clearInterval(interval);
+                        this.speedMultiplier = 1;
+                    }
+                }, duration / steps);
+            }
+
+            animate() {
+                this.ctx.fillStyle = 'rgba(2, 6, 23, 0.25)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                const cx = this.canvas.width / 2;
+                const cy = this.canvas.height / 2;
+
+                this.stars.forEach(star => {
+                    star.z -= 2 * this.speedMultiplier;
+                    if (star.z <= 0) {
+                        star.z = this.canvas.width;
+                        star.x = Math.random() * this.canvas.width;
+                        star.y = Math.random() * this.canvas.height;
+                    }
+
+                    const px = (star.x - cx) * (this.canvas.width / star.z) + cx;
+                    const py = (star.y - cy) * (this.canvas.width / star.z) + cy;
+                    const size = (1 - star.z / this.canvas.width) * 5 * this.speedMultiplier;
+
+                    if (px >= 0 && px <= this.canvas.width && py >= 0 && py <= this.canvas.height) {
+                        this.ctx.fillStyle = star.color;
+                        this.ctx.beginPath();
+                        this.ctx.arc(px, py, Math.abs(size), 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+                });
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        /* === GENERACIÓN DE EFECTOS MÁGICOS DE CHISPAS === */
+        function triggerSparkles() {
+            const gate = document.getElementById('gate-container');
+            const rect = gate.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2 + 30; // Posición aproximada del ojo de la cerradura
+
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'sparkle-particle';
+                
+                // Distribución radial aleatoria
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 40 + Math.random() * 80;
+                const tx = Math.cos(angle) * speed + 'px';
+                const ty = Math.sin(angle) * speed + 'px';
+                
+                particle.style.setProperty('--tx', tx);
+                particle.style.setProperty('--ty', ty);
+                
+                // Color mágico aleatorio (oro, magenta, púrpura)
+                const colors = ['#facc15', '#ca8a04', '#ec4899', '#a855f7', '#fbbf24'];
+                particle.style.background = `radial-gradient(circle, ${colors[Math.floor(Math.random() * colors.length)]} 0%, rgba(255,255,255,0) 70%)`;
+                
+                // Tamaño y offset inicial
+                const size = 6 + Math.random() * 10;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = (centerX - size / 2) + 'px';
+                particle.style.top = (centerY - size / 2) + 'px';
+                
+                gate.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 800);
+            }
+        }
+
+        /* === MECÁNICAS DE JUEGO Y VALIDACIÓN === */
+        function loadLevel(index) {
+            currentLevelIndex = index;
+            const data = LEVELS[index];
+
+            // Cargar datos del nivel
+            document.getElementById('level-title').innerText = data.title;
+            document.getElementById('formula-badge').innerText = data.badge;
+            document.getElementById('digit-hint-badge').innerText = data.hint;
+            document.getElementById('clue-text').innerText = data.clue;
+
+            // Restablecer el panel y placeholders
+            const codeInput = document.getElementById('code-input');
+            codeInput.value = '';
+            codeInput.setAttribute('maxlength', data.maxlength);
+            codeInput.setAttribute('placeholder', data.placeholder);
+
+            document.getElementById('gate-status-text').innerText = "CANDADO MÁGICO CERRADO";
+            document.getElementById('gate-status-text').className = "text-amber-500 font-bold";
+
+            // Restablecer el grillete
+            const shackle = document.getElementById('padlock-shackle-group');
+            shackle.className = "shackle-close";
+            
+            // Restablecer cuerpo
+            const bodyGroup = document.getElementById('padlock-body-group');
+            bodyGroup.className = "";
+
+            // Ocultar llaves y capas de revelación espacial
+            const key = document.getElementById('magic-key-group');
+            key.style.transition = "none";
+            key.style.transform = "translate(0px, -45px) scale(0) rotate(0deg)";
+            key.style.opacity = "0";
+
+            document.getElementById('magic-padlock-view').style.opacity = "1";
+            document.getElementById('magic-padlock-view').style.pointerEvents = "auto";
+            document.getElementById('planet-reveal-box').style.opacity = "0";
+
+            // Intercambiar botones de progreso
+            document.getElementById('next-level-btn').classList.add('hidden');
+            document.getElementById('validate-btn').classList.remove('hidden');
+
+            // Actualizar luces de estado en el panel superior (sellos rotos)
+            for (let i = 1; i <= 5; i++) {
+                const dot = document.getElementById(`pdot-${i}`);
+                if (i <= unlockedLevelsCount) {
+                    dot.className = "w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-green-500/50 text-green-400 bg-green-950/40 shadow-[0_0_8px_rgba(34,197,94,0.3)]";
+                } else if (i === currentLevelIndex + 1) {
+                    dot.className = "w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-purple-500 text-purple-400 bg-purple-950/40 animate-pulse";
+                } else {
+                    dot.className = "w-6 h-6 rounded-md flex items-center justify-center font-mono-sci text-xs font-bold transition-all duration-300 border border-slate-800 text-slate-500 bg-slate-950";
+                }
+            }
+        }
+
+        function validateCode() {
+            const inputVal = document.getElementById('code-input').value.trim();
+            const correctAns = LEVELS[currentLevelIndex].answer;
+            const shackle = document.getElementById('padlock-shackle-group');
+            const padlockSvg = document.getElementById('magic-padlock-svg');
+            const bodyGroup = document.getElementById('padlock-body-group');
+            const key = document.getElementById('magic-key-group');
+
+            if (inputVal === correctAns) {
+                // ¡CÓDIGO CORRECTO! Bloquear controles durante la cinemática
+                unlockedLevelsCount = Math.max(unlockedLevelsCount, currentLevelIndex + 1);
+                document.getElementById('gate-status-text').innerText = "CALIBRANDO LLAVE...";
+                document.getElementById('gate-status-text').className = "text-purple-400 font-bold animate-pulse";
+
+                // PASO 1: Materializar llave flotando arriba
+                key.style.transition = "none";
+                key.style.transform = "translate(0px, -45px) scale(0) rotate(0deg)";
+                key.style.opacity = "0";
+                
+                // Forzar reflow
+                key.offsetHeight;
+
+                key.style.transition = "transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s";
+                key.style.transform = "translate(0px, -20px) scale(1.1) rotate(0deg)";
+                key.style.opacity = "1";
+                AudioEngine.beep(440, 'sine', 0.2, 0.1, 1500, true);
+
+                // PASO 2: Deslizarse limpiamente dentro de la cerradura (Y-offset = 0)
+                setTimeout(() => {
+                    key.style.transition = "transform 0.5s cubic-bezier(0.7, 0, 0.3, 1)";
+                    key.style.transform = "translate(0px, 0px) scale(1.0) rotate(0deg)";
+                    AudioEngine.playClickSfx();
+                }, 600);
+
+                // PASO 3: Rotación física perfecta de 90°
+                setTimeout(() => {
+                    key.style.transition = "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)";
+                    key.style.transform = "translate(0px, 0px) scale(1.0) rotate(90deg)";
+                    
+                    // Disparar las chispas mágicas al terminar la rotación
+                    setTimeout(() => {
+                        triggerSparkles();
+                        AudioEngine.playUnlockSound();
+                    }, 200);
+                }, 1200);
+
+                // PASO 4: Salto del grillete con recoil y rebote físico
+                setTimeout(() => {
+                    document.getElementById('gate-status-text').innerText = "PORTAL DESBLOQUEADO";
+                    document.getElementById('gate-status-text').className = "text-green-400 font-bold animate-pulse";
+
+                    padlockSvg.classList.add('magic-glow-gold');
+                    shackle.className = "shackle-open";
+                    bodyGroup.className = "lock-recoil";
+                }, 2000);
+
+                // PASO 5: Desvanecer el candado y revelar planeta
+                setTimeout(() => {
+                    document.getElementById('magic-padlock-view').style.opacity = "0";
+                    document.getElementById('magic-padlock-view').style.pointerEvents = "none";
+                    
+                    const planetReveal = document.getElementById('planet-reveal-box');
+                    document.getElementById('planet-svg-container').innerHTML = LEVELS[currentLevelIndex].planetSvg;
+                    document.getElementById('revealed-planet-title').innerText = LEVELS[currentLevelIndex].planetName;
+                    document.getElementById('riddle-clue-display').innerText = LEVELS[currentLevelIndex].riddleClue;
+                    
+                    planetReveal.style.opacity = "1";
+                    
+                    document.getElementById('validate-btn').classList.add('hidden');
+                    document.getElementById('next-level-btn').classList.remove('hidden');
+                }, 2900);
+
+            } else {
+                // ¡CÓDIGO INCORRECTO!
+                AudioEngine.playErrorSound();
+                
+                shackle.className = "shackle-error";
+                padlockSvg.classList.add('vibrate-error');
+                
+                document.getElementById('gate-status-text').innerText = "FALLO DE SINTONIZACIÓN";
+                document.getElementById('gate-status-text').className = "text-red-500 font-bold";
+
+                setTimeout(() => {
+                    shackle.className = "";
+                    padlockSvg.classList.remove('vibrate-error');
+                    clearInput();
+                }, 700);
+            }
+        }
+
+        function nextLevel() {
+            if (starfieldInstance) starfieldInstance.warpSpeed();
+
+            if (currentLevelIndex < 4) {
+                loadLevel(currentLevelIndex + 1);
+            } else {
+                showVictoryScreen();
+            }
+        }
+
+        function showVictoryScreen() {
+            const victory = document.getElementById('victory-screen');
+            victory.classList.remove('hidden');
+            victory.classList.add('flex');
+
+            // Recopilar el puzzle de la bitácora sin comillas
+            const compiledText = LEVELS.map(lvl => lvl.riddleClue.replace(/«|»/g, '')).join(' ');
+            document.getElementById('compiled-riddle-text').innerText = compiledText;
+
+            // Mostrar galería final de los astros rescatados
+            const gallery = document.getElementById('victory-planet-gallery');
+            gallery.innerHTML = '';
+            LEVELS.forEach(lvl => {
+                const item = document.createElement('div');
+                item.className = "flex flex-col items-center p-3 bg-purple-950/40 border border-purple-500/20 rounded-xl min-w-[100px]";
+                item.innerHTML = `
+                    <div class="w-12 h-12 mb-1">${lvl.planetSvg}</div>
+                    <span class="text-[8px] font-mono-sci text-amber-300 text-center tracking-widest leading-none">${lvl.planetName}</span>
+                `;
+                gallery.appendChild(item);
+            });
+
+            startFireworks();
+        }
+
+        function resetGame() {
+            unlockedLevelsCount = 0;
+            const victory = document.getElementById('victory-screen');
+            victory.classList.add('hidden');
+            victory.classList.remove('flex');
+            
+            const welcome = document.getElementById('welcome-screen');
+            welcome.classList.remove('opacity-0');
+            welcome.style.display = 'flex';
+
+            document.getElementById('intro-phase-1').classList.remove('hidden');
+            document.getElementById('intro-phase-2').classList.add('hidden');
+            document.getElementById('intro-phase-3').classList.add('hidden');
+            document.getElementById('play-transmission-btn').disabled = false;
+            document.getElementById('speaker-text').innerText = "DECODIFICAR SEÑAL SÓNICA";
+
+            AudioEngine.stopSpaceAmbient();
+        }
+
+        /* === CONFIGURACIÓN DE TECLADOS FÍSICOS Y VIRTUALES === */
+        function isNumberKey(evt) {
+            var charCode = (evt.which) ? evt.which : evt.keyCode;
+            if (charCode > 31 && (charCode < 48 || charCode > 57)) return false;
+            return true;
+        }
+
+        function pressKey(num) {
+            AudioEngine.beep(440, 'sine', 0.05, 0.1, 1500);
+            const input = document.getElementById('code-input');
+            if(input.value.length < input.maxLength) {
+                input.value += num;
+            }
+        }
+
+        function clearInput() {
+            AudioEngine.beep(330, 'sine', 0.05, 0.1, 1000);
+            document.getElementById('code-input').value = '';
+        }
+
+        function backspaceInput() {
+            AudioEngine.beep(380, 'sine', 0.05, 0.1, 1000);
+            const input = document.getElementById('code-input');
+            input.value = input.value.slice(0, -1);
+        }
+
+        function toggleMusic() {
+            const btn = document.getElementById('music-toggle-btn');
+            const status = document.getElementById('music-status-text');
+            const icon = document.getElementById('music-icon');
+
+            if (AudioEngine.isPlayingMusic) {
+                AudioEngine.stopSpaceAmbient();
+                status.innerText = "OFF";
+                status.className = "font-bold text-red-400";
+                icon.innerText = "🔇";
+            } else {
+                AudioEngine.startSpaceAmbient();
+                status.innerText = "ON";
+                status.className = "font-bold text-green-400";
+                icon.innerText = "🔊";
+            }
+        }
+
+        /* === MOTOR DE PARTÍCULAS (Celebración de Fuegos Artificiales en la Victoria) === */
+        function startFireworks() {
+            const canvas = document.getElementById('fireworks-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+
+            class Particle {
+                constructor(x, y, color) {
+                    this.x = x;
+                    this.y = y;
+                    this.color = color;
+                    this.radius = Math.random() * 3 + 1;
+                    this.angle = Math.random() * Math.PI * 2;
+                    this.velocity = Math.random() * 6 + 2;
+                    this.speedX = Math.cos(this.angle) * this.velocity;
+                    this.speedY = Math.sin(this.angle) * this.velocity;
+                    this.gravity = 0.05;
+                    this.alpha = 1;
+                    this.decay = Math.random() * 0.015 + 0.005;
+                }
+
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    this.speedY += this.gravity;
+                    this.alpha -= this.decay;
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.globalAlpha = this.alpha;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            function triggerExplosion() {
+                const colors = ['#facc15', '#ec4899', '#a855f7', '#60a5fa', '#34d399'];
+                const randomX = Math.random() * canvas.width;
+                const randomY = Math.random() * (canvas.height * 0.6);
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                AudioEngine.beep(300 + Math.random() * 400, 'triangle', 0.45, 0.05, 1200);
+
+                for (let i = 0; i < 40; i++) {
+                    particles.push(new Particle(randomX, randomY, color));
+                }
+            }
+
+            const timer = setInterval(() => {
+                if (document.getElementById('victory-screen').classList.contains('hidden')) {
+                    clearInterval(timer);
+                    return;
+                }
+                triggerExplosion();
+            }, 1000);
+
+            function run() {
+                if (document.getElementById('victory-screen').classList.contains('hidden')) return;
+                
+                ctx.fillStyle = 'rgba(2, 6, 23, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach((p, index) => {
+                    p.update();
+                    p.draw();
+                    if (p.alpha <= 0) particles.splice(index, 1);
+                });
+
+                requestAnimationFrame(run);
+            }
+
+            run();
+        }
+
+        /* === INICIALIZACIÓN GENERAL === */
+        window.onload = function() {
+            starfieldInstance = new Starfield('starfield');
+            
+            // Atajos de teclado físico
+            window.addEventListener('keydown', (e) => {
+                if (e.key >= '0' && e.key <= '9') {
+                    pressKey(e.key);
+                } else if (e.key === 'Backspace') {
+                    backspaceInput();
+                } else if (e.key === 'Escape') {
+                    clearInput();
+                } else if (e.key === 'Enter') {
+                    validateCode();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
